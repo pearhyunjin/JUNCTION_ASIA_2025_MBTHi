@@ -1,3 +1,13 @@
+//
+//  RecipeIngredient.swift
+//  MBTHi
+//
+//  Created by taeni on 8/24/25.
+//
+
+import Foundation
+import SwiftData
+
 @Model
 final class RecipeIngredient {
     @Attribute(.unique) var id: UUID
