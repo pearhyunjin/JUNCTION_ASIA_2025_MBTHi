@@ -6,45 +6,26 @@
 //
 
 import SwiftUI
-import PhotosUI
+import SwiftData
 
-// MARK: - Mock Models
-struct LowStockItem: Identifiable {
-    let id = UUID()
-    let category: String
-    let name: String
-    let quantityText: String      // "2봉(500g)"
-    let quantityHighlight: String // "2봉" 처럼 강조할 부분
-    let purchaseURL: URL?         // 구매처 링크 (목)
-}
-
+// MARK: - Prediction Model (목업 데이터 유지)
 struct Prediction: Identifiable {
     let id = UUID()
     let dateLabel: String // "8/24"
     let value: Double
 }
 
-struct InventoryItem: Identifiable {
-    let id = UUID()
-    let name: String
-    let value: String // "2봉(500g)"
-}
-
-struct InventorySectionModel: Identifiable {
-    let id = UUID()
-    let title: String
-    let items: [InventoryItem]
-}
-
 // MARK: - HomeView
 struct HomeView: View {
-    // MARK: Mock Data
-    private let lowStockItems: [LowStockItem] = [
-        .init(category: "음료", name: "원두", quantityText: "2봉(500g)", quantityHighlight: "2봉", purchaseURL: URL(string: "https://example.com")),
-        .init(category: "음료", name: "우유",  quantityText: "3팩(900ml)", quantityHighlight: "3팩", purchaseURL: URL(string: "https://example.com")),
-        .init(category: "디저트", name: "초코 소스", quantityText: "1통(800g)", quantityHighlight: "1통", purchaseURL: URL(string: "https://example.com"))
-    ]
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: [SortDescriptor(\Ingredient.name)]) private var ingredients: [Ingredient]
     
+    // MARK: Computed Properties
+    private var lowStockIngredients: [Ingredient] {
+        ingredients.filter { $0.isLowStock }
+    }
+    
+    // MARK: Mock Data (일부 유지)
     private let weeklyPred: [Prediction] = [
         .init(dateLabel: "8/24", value: 68),
         .init(dateLabel: "8/25", value: 92),
@@ -53,18 +34,6 @@ struct HomeView: View {
         .init(dateLabel: "8/28", value: 80),
         .init(dateLabel: "8/29", value: 85),
         .init(dateLabel: "8/30", value: 70)
-    ]
-    
-    private let inventorySections: [InventorySectionModel] = [
-        .init(title: "음료 재료", items: [
-            .init(name: "원두", value: "2봉(500g)"),
-            .init(name: "우유", value: "20팩(900ml)"),
-            .init(name: "초코 소스", value: "5통(800g)")
-        ]),
-        .init(title: "디저트 재료", items: [
-            .init(name: "버터", value: "4개(454g)"),
-            .init(name: "설탕", value: "2봉(1kg)")
-        ])
     ]
     
     var body: some View {
@@ -97,7 +66,7 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Pepper 사장님,")
                 .font(.system(size: 34, weight: .bold))
-                .foregroundStyle(Color("DeepGreen", bundle: .main) ?? Color(.label))
+                .foregroundStyle(Color("Darker", bundle: .main) ?? Color(.label))
             Text("오늘도 좋은 하루 보내세요!")
                 .font(.title3)
                 .foregroundStyle(.secondary)
@@ -113,9 +82,24 @@ struct HomeView: View {
     
     private var lowStockCarousel: some View {
         TabView {
-            ForEach(lowStockItems) { item in
-                LowStockCard(item: item)
-                    .padding(.horizontal, 16)
+            if lowStockIngredients.isEmpty {
+                VStack {
+                    Text("소진 임박 재료가 없습니다.")
+                        .font(.headline)
+                        .foregroundColor(.secondary)
+                        .padding()
+                }
+                .frame(height: 180)
+                .frame(maxWidth: .infinity)
+                .background(Color(.systemGray5))
+                .cornerRadius(16)
+                .padding(.horizontal, 16)
+
+            } else {
+                ForEach(lowStockIngredients) { item in
+                    LowStockCard(item: item)
+                        .padding(.horizontal, 16)
+                }
             }
         }
         .tabViewStyle(.page(indexDisplayMode: .automatic))
@@ -133,35 +117,29 @@ struct HomeView: View {
                 Label("수정하기", systemImage: "pencil")
                     .font(.body.weight(.semibold))
             }
-            .foregroundStyle(Color("DeepGreen", bundle: .main) ?? Color(.systemGreen))
+            .foregroundStyle(Color("Normal", bundle: .main) ?? Color(.systemGreen))
         }
         .padding(.horizontal, 16)
     }
     
     private var inventoryList: some View {
         VStack(spacing: 16) {
-            ForEach(inventorySections) { section in
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(section.title)
-                        .font(.headline)
-                        .foregroundStyle(.secondary)
-                    VStack(spacing: 0) {
-                        ForEach(section.items) { row in
-                            HStack {
-                                Text(row.name)
-                                Spacer()
-                                Text(row.value)
-                                    .foregroundStyle(.secondary)
-                            }
-                            .padding(.vertical, 12)
-                            Divider()
-                                .padding(.leading, 0)
+            VStack(alignment: .leading, spacing: 8) {
+                VStack(spacing: 0) {
+                    ForEach(ingredients) {
+                        ingredient in
+                        HStack {
+                            Text(ingredient.name)
+                            Spacer()
+                            Text("\\(Int(ingredient.currentStock)) \\(ingredient.unit.displayName)")
+                                .foregroundStyle(.secondary)
                         }
+                        .padding(.vertical, 12)
+                        Divider()
                     }
-                    .padding(.horizontal, 0)
                 }
-                .padding(.horizontal, 16)
             }
+            .padding(.horizontal, 16)
         }
     }
     
@@ -172,12 +150,12 @@ struct HomeView: View {
             Text("재고 파악하기")
                 .font(.title3.weight(.semibold))
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 18)
+                .padding(.vertical, 12)
         }
         .buttonStyle(.plain)
-        .background(Color(.systemTeal))
-        .foregroundStyle(.white)
-        .clipShape(RoundedRectangle(cornerRadius: 24))
+        .background(Color("Normal", bundle: .main))
+        .foregroundStyle(Color("Light", bundle: .main))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
         .padding(.horizontal, 16)
         .padding(.top, 8)
     }
@@ -185,59 +163,46 @@ struct HomeView: View {
 
 // MARK: - LowStock Card
 private struct LowStockCard: View {
-    let item: LowStockItem
+    let item: Ingredient
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(item.category)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            
+            // 카테고리는 Ingredient 모델에 없으므로 일단 제거
             Text(item.name)
                 .font(.system(size: 34, weight: .bold))
                 .foregroundStyle(Color(.label))
             
-            HStack(spacing: 6) {
-                Text(item.quantityHighlight)
-                    .font(.title3.weight(.semibold))
+            HStack(alignment: .bottom, spacing: 6) {
+                Text("\\(Int(item.currentStock))")
+                    .font(.title.weight(.semibold))
                     .foregroundStyle(Color(.systemRed))
-                Text(item.quantityText.replacingOccurrences(of: item.quantityHighlight, with: ""))
+                Text(item.unit.displayName)
                     .font(.title3)
                     .foregroundStyle(.secondary)
+                    .padding(.bottom, 2)
             }
             
             Spacer()
             
             HStack {
                 Spacer()
-                if let url = item.purchaseURL {
-                    Link(destination: url) {
-                        Label("구매처", systemImage: "link")
-                            .font(.body.weight(.semibold))
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 10)
-                            .background(Color("DeepGreen", bundle: .main) ?? Color(.systemGreen))
-                            .foregroundStyle(.white)
-                            .clipShape(Capsule())
-                    }
-                } else {
-                    Button {
-                        // 이후 연결
-                    } label: {
-                        Label("구매처", systemImage: "link")
-                            .font(.body.weight(.semibold))
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 10)
-                            .background(Color("DeepGreen", bundle: .main) ?? Color(.systemGreen))
-                            .foregroundStyle(.white)
-                            .clipShape(Capsule())
-                    }
-                }
+                // 구매처 링크는 모델에 없으므로 비활성화된 버튼으로 표시
+                Label("구매처", systemImage: "link")
+                    .font(.body.weight(.semibold))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(Color.gray.opacity(0.5))
+                    .foregroundStyle(Color.white.opacity(0.8))
+                    .clipShape(Capsule())
             }
         }
         .padding(16)
-        .frame(maxWidth: .infinity, maxHeight: 160)
-        .background(Color(.systemTeal).opacity(0.10))
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color("Light", bundle: .main))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+        )
         .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 }
@@ -254,7 +219,7 @@ private struct WeeklyBarChart: View {
                     ForEach(preds) { p in
                         VStack(spacing: 8) {
                             RoundedRectangle(cornerRadius: 4)
-                                .fill(Color(.systemTeal).opacity(0.5))
+                                .fill(Color("Normal", bundle: .main).opacity(0.7))
                                 .frame(width: 18,
                                        height: CGFloat(p.value / maxY) * 120)
                             Text(p.dateLabel)
@@ -269,10 +234,13 @@ private struct WeeklyBarChart: View {
     }
 }
 
-// MARK: - Preview
-struct HomeView_Previews: PreviewProvider {
-    static var previews: some View {
-        HomeView()
-            .environment(\.locale, .init(identifier: "ko_KR"))
-    }
-}
+//// MARK: - Preview
+//#Preview {
+//    let container = try! ModelContainer(for: Ingredient.self, Recipe.self, MenuOption.self, Order.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+//    // MockDataManager를 사용하여 Preview를 위한 데이터 주입
+//    MockDataManager.insertAllMockData(in: container.mainContext)
+//    
+//    return HomeView()
+//        .modelContainer(container)
+//        .environment(\.locale, .init(identifier: "ko_KR"))
+//}
