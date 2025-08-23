@@ -11,9 +11,13 @@ import SwiftData
 @main
 struct MBTHiApp: App {
     var sharedModelContainer: ModelContainer = {
-        // TODO : scheme 정의 필요
         let schema = Schema([
-            Item.self,
+            Ingredient.self,
+            Recipe.self,
+            RecipeIngredient.self,
+            MenuOption.self,
+            Order.self,
+            OrderItem.self
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
@@ -27,7 +31,19 @@ struct MBTHiApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .onAppear {
+                    setupInitialData()
+                }
         }
         .modelContainer(sharedModelContainer)
+    }
+    
+    private func setupInitialData() {
+        let context = sharedModelContainer.mainContext
+        
+        // Mock 데이터가 없으면 삽입
+        if !MockDataManager.hasMockData(in: context) {
+            MockDataManager.insertAllMockData(in: context)
+        }
     }
 }
