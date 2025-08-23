@@ -30,7 +30,7 @@ struct MBTHiApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            HomeView()
                 .onAppear {
                     setupInitialData()
                 }
