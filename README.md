@@ -1,0 +1,2 @@
+# JUNCTION_ASIA_2025_MBTHi
+JUNCTION ASIA 2025 해커톤에 참여한 MBTHi 팀의 레포지터리 입니다.
