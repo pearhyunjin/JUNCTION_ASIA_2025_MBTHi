@@ -11,6 +11,7 @@ import SwiftData
 @main
 struct MBTHiApp: App {
     var sharedModelContainer: ModelContainer = {
+        // TODO : scheme 정의 필요
         let schema = Schema([
             Item.self,
         ])
