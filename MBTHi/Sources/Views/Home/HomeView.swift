@@ -19,7 +19,8 @@ struct Prediction: Identifiable {
 struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: [SortDescriptor(\Ingredient.name)]) private var ingredients: [Ingredient]
-    
+    @State private var showSalesScan = false
+
     // MARK: Computed Properties
     private var lowStockIngredients: [Ingredient] {
         ingredients.filter { $0.isLowStock }
@@ -59,6 +60,14 @@ struct HomeView: View {
             .padding(.vertical, 16)
         }
         .background(Color(.systemGroupedBackground))
+        .fullScreenCover(isPresented: $showSalesScan) {
+            SalesScanView(
+                viewModel: SalesScanViewModel(
+                    ocrService: UpstageOCRService(),
+                    chatService: UpstageChatService()
+                )
+            )
+        }
     }
     
     // MARK: Subviews
@@ -145,7 +154,7 @@ struct HomeView: View {
     
     private var bottomActionButton: some View {
         Button {
-            // 이후: OCR/LLM 파이프라인 연결
+            showSalesScan = true
         } label: {
             Text("재고 파악하기")
                 .font(.title3.weight(.semibold))
