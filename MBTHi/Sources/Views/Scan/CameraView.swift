@@ -13,7 +13,8 @@ import PhotosUI
 final class CameraController: NSObject, ObservableObject {
     let session = AVCaptureSession()
     private let sessionQueue = DispatchQueue(label: "camera.session.queue")
-    private var photoOutput = AVCapturePhotoOutput()
+    private let photoOutput = AVCapturePhotoOutput()
+    private var photoCaptureDelegate: PhotoCaptureDelegate?
 
     override init() {
         super.init()
@@ -25,7 +26,6 @@ final class CameraController: NSObject, ObservableObject {
             self.session.beginConfiguration()
             self.session.sessionPreset = .photo
 
-            // 입력(후면 카메라)
             guard
                 let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
                 let input = try? AVCaptureDeviceInput(device: device),
@@ -34,7 +34,6 @@ final class CameraController: NSObject, ObservableObject {
 
             self.session.addInput(input)
 
-            // 출력(스틸 캡처)
             if self.session.canAddOutput(self.photoOutput) {
                 self.session.addOutput(self.photoOutput)
                 self.photoOutput.isHighResolutionCaptureEnabled = true
@@ -46,19 +45,35 @@ final class CameraController: NSObject, ObservableObject {
     }
 
     func capturePhoto(completion: @escaping (Data?) -> Void) {
-        let settings = AVCapturePhotoSettings()
-        settings.isHighResolutionPhotoEnabled = true
-        photoOutput.capturePhoto(with: settings, delegate: PhotoCaptureDelegate(completion: completion))
+        sessionQueue.async {
+            let settings = AVCapturePhotoSettings()
+            settings.isHighResolutionPhotoEnabled = true
+            
+            // 델리게이트를 프로퍼티에 저장하여 메모리에서 해제되지 않도록 합니다.
+            self.photoCaptureDelegate = PhotoCaptureDelegate { [weak self] data in
+                completion(data)
+                self?.photoCaptureDelegate = nil // 작업 완료 후 델리게이트를 해제합니다.
+            }
+            
+            self.photoOutput.capturePhoto(with: settings, delegate: self.photoCaptureDelegate!)
+        }
     }
 
-    // 내부 위임자
+    // 내부 델리게이트 클래스
     private final class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate {
-        let completion: (Data?) -> Void
-        init(completion: @escaping (Data?) -> Void) { self.completion = completion }
+        private let completion: (Data?) -> Void
+        
+        init(completion: @escaping (Data?) -> Void) {
+            self.completion = completion
+        }
 
         func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
-            if let data = photo.fileDataRepresentation() { completion(data) }
-            else { completion(nil) }
+            if let error {
+                print("Error capturing photo: \(error.localizedDescription)")
+                completion(nil)
+                return
+            }
+            completion(photo.fileDataRepresentation())
         }
     }
 }
