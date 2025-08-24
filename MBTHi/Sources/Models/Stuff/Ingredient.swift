@@ -18,6 +18,8 @@ final class Ingredient {
     var pricePerUnit: Double
     var lastUpdated: Date
     
+    var purchaseLink: String
+    
     // 관계
     @Relationship(deleteRule: .cascade, inverse: \RecipeIngredient.ingredient)
     var recipeIngredients: [RecipeIngredient] = []
@@ -29,7 +31,8 @@ final class Ingredient {
         currentStock: Double = 0,
         minimumStock: Double = 0,
         pricePerUnit: Double = 0,
-        lastUpdated: Date = Date()
+        lastUpdated: Date = Date(),
+        purchaseLink: String = ""
     ) {
         self.id = id
         self.name = name
@@ -38,6 +41,7 @@ final class Ingredient {
         self.minimumStock = minimumStock
         self.pricePerUnit = pricePerUnit
         self.lastUpdated = lastUpdated
+        self.purchaseLink = purchaseLink
     }
     
     // 재고 부족 여부 확인
