@@ -7,21 +7,16 @@
 
 import SwiftUI
 
-struct PrimaryButton: View {
+// MARK: - PrimaryButtonLabel (재사용을 위해 분리)
+struct PrimaryButtonLabel: View {
     let title: String
     let style: PrimaryButtonStyle
-    let action: (() -> Void)?
+    let iconName: String?
     
-    init(title: String, style: PrimaryButtonStyle, action: ( () -> Void)?) {
-        self.title = title
-        self.style = style
-        self.action = action
-    }
-    
-    private var buttonLabel: some View {
+    var body: some View {
         HStack(spacing: 8) {
-            if style == .mini {
-                Image(systemName: "link")
+            if let iconName = iconName {
+                Image(systemName: iconName)
             }
             Text(title)
         }
@@ -34,6 +29,21 @@ struct PrimaryButton: View {
         .font(style.font)
         .cornerRadius(99)
     }
+}
+
+// MARK: - PrimaryButton
+struct PrimaryButton: View {
+    let title: String
+    let style: PrimaryButtonStyle
+    let iconName: String?
+    let action: (() -> Void)?
+    
+    init(title: String, style: PrimaryButtonStyle, iconName: String? = nil, action: ( () -> Void)?) {
+        self.title = title
+        self.style = style
+        self.iconName = iconName
+        self.action = action
+    }
     
     var body: some View {
         Button(action: {
@@ -41,26 +51,22 @@ struct PrimaryButton: View {
                 action()
             }
         }, label: {
-            buttonLabel
+            PrimaryButtonLabel(title: title, style: style, iconName: iconName)
         })
         .disabled(!style.isEnable)
     }
 }
 
+// MARK: - Preview
 #Preview {
-    // 비활성상태 버튼
-    PrimaryButton(title: "비활성화", style: .disable) {
-        // 활성, 비활성 통일성을 주고 싶다면 작성을 유지하고 style 조건만 처리해도되고,
-        // 아니라면 클로저({ }부분)를 아예 작성하지 않아도 됩니다.
-        print("동작 X")
+    VStack(spacing: 10) {
+        PrimaryButton(title: "비활성화", style: .disable, action: {})
+        
+        PrimaryButton(title: "활성화", style: .basic, action: {})
+        
+        PrimaryButton(title: "구매처", style: .mini, iconName: "link") {}
+        
+        PrimaryButton(title: "앨범", style: .basic, iconName: "photo.on.rectangle") {}
     }
-    // 활성상태 버튼
-    PrimaryButton(title: "활성화", style: .basic) {
-        print("버튼 액션 실행")
-    }
-    
-    // 비활성상태 버튼
-    PrimaryButton(title: "구매처", style: .mini) {
-        print("구매처 페이지 열기")
-    }
+    .padding()
 }
