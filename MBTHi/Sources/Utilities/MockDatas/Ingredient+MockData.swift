@@ -63,21 +63,21 @@ extension Ingredient {
             Ingredient(
                 name: "화이트초콜릿",
                 unit: .gram,
-                currentStock: 400,
+                currentStock: 900,
                 minimumStock: 50,
                 pricePerUnit: 0.015
             ),
             Ingredient(
                 name: "박력분",
                 unit: .gram,
-                currentStock: 1000,
+                currentStock: 2000,
                 minimumStock: 200,
                 pricePerUnit: 0.002
             ),
             Ingredient(
                 name: "계란",
                 unit: .piece,
-                currentStock: 20,
+                currentStock: 60,
                 minimumStock: 5,
                 pricePerUnit: 0.15
             ),

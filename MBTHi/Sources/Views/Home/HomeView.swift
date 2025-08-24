@@ -210,8 +210,8 @@ struct HomeView: View {
             HStack {
                 Text(title)
                     .font(.system(size: 16))
-                    .fontWeight(.medium)
-                    .foregroundColor(.textGrayFont)
+                    .fontWeight(.bold)
+                    .foregroundColor(.textFont)
                 Spacer()
             }
             .padding(.top, 16)
@@ -270,6 +270,7 @@ struct HomeView: View {
     
     private func formatStock(_ ingredient: Ingredient) -> String {
         let stock = ingredient.currentStock
+        let minimum = ingredient.minimumStock
         let name = ingredient.name
         
         switch ingredient.unit {
@@ -278,52 +279,52 @@ struct HomeView: View {
             switch name {
             case "원두":
                 if stock >= 1000 {
-                    let packages = Int(stock / 250) // 250g 기준
+                    let packages = Int(stock / minimum) // 250g 기준
                     return "\(packages)봉(\(Int(stock))g)"
                 } else {
                     return "\(Int(stock))g"
                 }
             case "초코파우더":
-                let packages = Int(stock / 160) // 160g 기준
+                let packages = Int(stock / minimum) // 160g 기준
                 return "\(packages)통(\(Int(stock))g)"
             case "시트용과자":
-                let packages = Int(stock / 194) // 194g 기준 (이미지 참고)
+                let packages = Int(stock / minimum) // 194g 기준 (이미지 참고)
                 return "\(packages)개(\(Int(stock))g)"
             case "버터":
-                let packages = Int(stock / 454) // 454g 기준 (이미지 참고)
+                let packages = Int(stock / minimum) // 454g 기준 (이미지 참고)
                 return "\(packages)개(\(Int(stock))g)"
             case "설탕":
                 if stock >= 1000 {
-                    let packages = Int(stock / 2000) // 2kg 기준
+                    let packages = Int(stock / minimum) // 2kg 기준
                     return "\(packages)봉(\(String(format: "%.1f", Double(stock)/1000))kg)"
                 } else {
                     return "\(Int(stock))g"
                 }
             case "사워크림":
-                let packages = Int(stock / 450) // 450g 기준
+                let packages = Int(stock / minimum) // 450g 기준
                 return "\(packages)통 \(Int(stock))g"
             case "연유":
-                let packages = Int(stock / 500) // 500g 기준
+                let packages = Int(stock / minimum) // 500g 기준
                 return "\(packages)통(\(Int(stock))g)"
             case "생크림":
-                let packages = Int(stock / 500) // 500g 기준
+                let packages = Int(stock / minimum) // 500g 기준
                 return "\(packages)통(\(Int(stock))g)"
             case "화이트초콜릿":
-                let packages = Int(stock / 400) // 400g 기준
+                let packages = Int(stock / minimum) // 400g 기준
                 return "\(packages)개(\(Int(stock))g)"
             case "박력분":
                 if stock >= 1000 {
-                    let packages = Int(stock / 2500) // 2.5kg 기준
+                    let packages = Int(stock / minimum) // 2.5kg 기준
                     return "\(packages)개(\(String(format: "%.1f", Double(stock)/1000))kg)"
                 } else {
                     return "\(Int(stock))g"
                 }
             case "말차파우더":
-                let packages = Int(stock / 300) // 300g 기준
+                let packages = Int(stock / minimum) // 300g 기준
                 return "\(packages)개(\(Int(stock))g)"
             default:
                 if stock >= 1000 {
-                    let packages = Int(stock / 500)
+                    let packages = Int(stock / minimum)
                     return "\(packages)봉(\(Int(stock))g)"
                 } else {
                     return "\(Int(stock))g"
