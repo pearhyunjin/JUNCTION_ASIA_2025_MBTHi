@@ -34,7 +34,7 @@ struct LowStockCard: View {
             Spacer()
             
             VStack {
-                PrimaryButton(title: "구매처", style: .mini) {
+                PrimaryButton(title: "구매처", style: .mini, iconName: "link") {
                     showSafari = true
                 }
                 .sheet(isPresented: $showSafari) {
