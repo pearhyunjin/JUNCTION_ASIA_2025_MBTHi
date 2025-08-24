@@ -35,11 +35,11 @@ struct WeeklyBarChart: View {
                         }
                     }
                 }
-                .frame(height: 136)
+                .frame(height: 150)
             }
             .frame(maxWidth:.infinity)
         }
         .background(.light)
-        .padding(.horizontal, 16)
+        .cornerRadius(10)
     }
 }
