@@ -8,14 +8,6 @@
 import SwiftUI
 import SwiftData
 
-// MARK: - Prediction Model (목업 데이터 유지)
-struct Prediction: Identifiable {
-    let id = UUID()
-    let dateLabel: String // "8/24"
-    let value: Double
-}
-
-// MARK: - HomeView
 struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: [SortDescriptor(\Ingredient.name)]) private var ingredients: [Ingredient]
@@ -26,7 +18,7 @@ struct HomeView: View {
         ingredients.filter { $0.isLowStock }
     }
     
-    // MARK: Mock Data (일부 유지)
+    // MARK: Mock Data (기존과 동일)
     private let weeklyPred: [Prediction] = [
         .init(dateLabel: "8/24", value: 68),
         .init(dateLabel: "8/25", value: 92),
@@ -51,7 +43,6 @@ struct HomeView: View {
                     // 일주일 매출 예측
                     sectionTitle("일주일 매출 예측")
                     WeeklyBarChart(preds: weeklyPred)
-                        .padding(.horizontal, 16)
                     
                     // 현재 재고 현황 + 수정하기
                     currentInventoryHeader
@@ -78,15 +69,16 @@ struct HomeView: View {
         .padding(.horizontal, 16)
     }
     
-    // MARK: Subviews
+    // MARK: Subviews (기존 스타일 그대로)
     private var greetingHeader: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Pepper 사장님,")
-                .font(.system(size: 34, weight: .bold))
-                .foregroundStyle(Color("Darker", bundle: .main) ?? Color(.label))
+                .font(.system(size: 24, weight: .bold))
+                .foregroundStyle(.darker)
+            
             Text("오늘도 좋은 하루 보내세요!")
-                .font(.title3)
-                .foregroundStyle(.secondary)
+                .font(.system(size: 24, weight: .bold))
+                .foregroundStyle(.darker)
         }
         .padding(.horizontal, 16)
     }
@@ -94,6 +86,7 @@ struct HomeView: View {
     private func sectionTitle(_ title: String) -> some View {
         Text(title)
             .font(.title2).bold()
+            .foregroundStyle(.textGrayFont)
             .padding(.horizontal, 16)
     }
     
@@ -125,8 +118,7 @@ struct HomeView: View {
     
     private var currentInventoryHeader: some View {
         HStack {
-            Text("현재 재고 현황")
-                .font(.title2).bold()
+            sectionTitle("현재 재고 현황")
             Spacer()
             Button {
                 // 편집 액션은 이후 연결
@@ -134,21 +126,20 @@ struct HomeView: View {
                 Label("수정하기", systemImage: "pencil")
                     .font(.body.weight(.semibold))
             }
-            .foregroundStyle(Color("Normal", bundle: .main) ?? Color(.systemGreen))
+            .foregroundStyle(.normal)
+            .padding(.trailing, 16)
         }
-        .padding(.horizontal, 16)
     }
     
     private var inventoryList: some View {
         VStack(spacing: 16) {
             VStack(alignment: .leading, spacing: 8) {
                 VStack(spacing: 0) {
-                    ForEach(ingredients) {
-                        ingredient in
+                    ForEach(ingredients) { ingredient in
                         HStack {
                             Text(ingredient.name)
                             Spacer()
-                            Text("\\(Int(ingredient.currentStock)) \\(ingredient.unit.displayName)")
+                            Text("\(Int(ingredient.currentStock)) \(ingredient.unit.displayName)")
                                 .foregroundStyle(.secondary)
                         }
                         .padding(.vertical, 12)
@@ -170,86 +161,16 @@ struct HomeView: View {
     }
 }
 
-// MARK: - LowStock Card
-private struct LowStockCard: View {
-    let item: Ingredient
+// MARK: - Preview
+#Preview {
+    let container = try! ModelContainer(
+        for: Ingredient.self, Recipe.self, MenuOption.self, Order.self,
+        configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+    )
     
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // 카테고리는 Ingredient 모델에 없으므로 일단 제거
-            Text(item.name)
-                .font(.system(size: 34, weight: .bold))
-                .foregroundStyle(Color(.label))
-            
-            HStack(alignment: .bottom, spacing: 6) {
-                Text("\\(Int(item.currentStock))")
-                    .font(.title.weight(.semibold))
-                    .foregroundStyle(Color(.systemRed))
-                Text(item.unit.displayName)
-                    .font(.title3)
-                    .foregroundStyle(.secondary)
-                    .padding(.bottom, 2)
-            }
-            
-            Spacer()
-            
-            HStack {
-                Spacer()
-                // 구매처 링크는 모델에 없으므로 비활성화된 버튼으로 표시
-                Label("구매처", systemImage: "link")
-                    .font(.body.weight(.semibold))
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .background(Color.gray.opacity(0.5))
-                    .foregroundStyle(Color.white.opacity(0.8))
-                    .clipShape(Capsule())
-            }
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color("Light", bundle: .main))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-    }
-}
-
-// MARK: - Weekly Bar Chart (Simple)
-private struct WeeklyBarChart: View {
-    let preds: [Prediction]
+    MockDataManager.insertAllMockData(in: container.mainContext)
     
-    var body: some View {
-        let maxY = max(preds.map(\.value).max() ?? 1, 1)
-        VStack(alignment: .leading, spacing: 12) {
-            ZStack(alignment: .bottomLeading) {
-                HStack(alignment: .bottom, spacing: 18) {
-                    ForEach(preds) { p in
-                        VStack(spacing: 8) {
-                            RoundedRectangle(cornerRadius: 4)
-                                .fill(Color("Normal", bundle: .main).opacity(0.7))
-                                .frame(width: 18,
-                                       height: CGFloat(p.value / maxY) * 120)
-                            Text(p.dateLabel)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-            }
-            .frame(height: 160)
-        }
-    }
+    return HomeView()
+        .modelContainer(container)
+        .environment(\.locale, .init(identifier: "ko_KR"))
 }
-
-//// MARK: - Preview
-//#Preview {
-//    let container = try! ModelContainer(for: Ingredient.self, Recipe.self, MenuOption.self, Order.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
-//    // MockDataManager를 사용하여 Preview를 위한 데이터 주입
-//    MockDataManager.insertAllMockData(in: container.mainContext)
-//    
-//    return HomeView()
-//        .modelContainer(container)
-//        .environment(\.locale, .init(identifier: "ko_KR"))
-//}
