@@ -38,36 +38,44 @@ struct HomeView: View {
     ]
     
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                // 인사
-                greetingHeader
-                
-                // 소진 임박 재료 (스와이프 카드)
-                sectionTitle("소진 임박 재료")
-                lowStockCarousel
-                
-                // 일주일 매출 예측
-                sectionTitle("일주일 매출 예측")
-                WeeklyBarChart(preds: weeklyPred)
-                    .padding(.horizontal, 16)
-                
-                // 현재 재고 현황 + 수정하기
-                currentInventoryHeader
-                inventoryList
-                bottomActionButton
+        ZStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    // 인사
+                    greetingHeader
+                    
+                    // 소진 임박 재료 (스와이프 카드)
+                    sectionTitle("소진 임박 재료")
+                    lowStockCarousel
+                    
+                    // 일주일 매출 예측
+                    sectionTitle("일주일 매출 예측")
+                    WeeklyBarChart(preds: weeklyPred)
+                        .padding(.horizontal, 16)
+                    
+                    // 현재 재고 현황 + 수정하기
+                    currentInventoryHeader
+                    inventoryList
+                }
+                .padding(.vertical, 16)
             }
-            .padding(.vertical, 16)
-        }
-        .background(Color(.systemGroupedBackground))
-        .fullScreenCover(isPresented: $showSalesScan) {
-            SalesScanView(
-                viewModel: SalesScanViewModel(
-                    ocrService: UpstageOCRService(),
-                    chatService: UpstageChatService()
+            .fullScreenCover(isPresented: $showSalesScan) {
+                SalesScanView(
+                    viewModel: SalesScanViewModel(
+                        ocrService: UpstageOCRService(),
+                        chatService: UpstageChatService()
+                    )
                 )
-            )
+            }
+            
+            VStack {
+                Spacer()
+                
+                bottomActionButton
+                    .padding(.vertical, 16)
+            }
         }
+        .padding(.horizontal, 16)
     }
     
     // MARK: Subviews
@@ -153,20 +161,12 @@ struct HomeView: View {
     }
     
     private var bottomActionButton: some View {
-        Button {
+        PrimaryButton(
+            title: "재고 파악하기",
+            style: .basic)
+        {
             showSalesScan = true
-        } label: {
-            Text("재고 파악하기")
-                .font(.title3.weight(.semibold))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
         }
-        .buttonStyle(.plain)
-        .background(Color("Normal", bundle: .main))
-        .foregroundStyle(Color("Light", bundle: .main))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .padding(.horizontal, 16)
-        .padding(.top, 8)
     }
 }
 

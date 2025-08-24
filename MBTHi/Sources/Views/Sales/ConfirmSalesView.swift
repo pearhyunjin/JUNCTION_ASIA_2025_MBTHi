@@ -20,7 +20,7 @@ struct ConfirmSalesView: View {
                     Image(systemName: "xmark")
                         .font(.system(size: 22, weight: .semibold))
                         .foregroundStyle(.secondary)
-                        .padding(.horizontal, 16).padding(.vertical, 12)
+                        .padding(.vertical, 12)
                 }
                 Spacer()
                 Text("판매내역 확인")
@@ -64,7 +64,6 @@ struct ConfirmSalesView: View {
                             // 섹션 구분선
                             Divider().overlay(Color(.systemTeal)).padding(.top, 6)
                         }
-                        .padding(.horizontal, 16)
                     }
 
                     Spacer(minLength: 120)
@@ -73,22 +72,14 @@ struct ConfirmSalesView: View {
             }
 
             // 하단 큰 버튼
-            Button {
+            PrimaryButton(
+                title: "판매내역 반영하기",
+                style: .basic)
+            {
                 onApply()
-            } label: {
-                Text("판매내역 반영하기")
-                    .font(.title3.weight(.semibold))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 18)
             }
-            .buttonStyle(.plain)
-            .background(Color(.systemTeal))
-            .foregroundStyle(.white)
-            .clipShape(RoundedRectangle(cornerRadius: 28))
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
         }
-        .background(Color(.systemBackground))
+        .padding(.horizontal, 16)
         .toolbar(.hidden, for: .navigationBar)
     }
 }
