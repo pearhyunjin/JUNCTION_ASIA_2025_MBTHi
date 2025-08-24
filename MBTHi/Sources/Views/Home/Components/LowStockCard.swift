@@ -7,48 +7,78 @@
 
 import SwiftUI
 
-// MARK: - LowStock Card (기존 스타일 그대로)
+import SwiftUI
+
 struct LowStockCard: View {
     let item: Ingredient
+    @State private var showSafari = false
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        HStack(spacing: 12) {
             // 카테고리는 Ingredient 모델에 없으므로 일단 제거
-            Text(item.name)
-                .font(.system(size: 34, weight: .bold))
-                .foregroundStyle(Color(.label))
-            
-            HStack(alignment: .bottom, spacing: 6) {
-                Text("\(Int(item.currentStock))")
-                    .font(.title.weight(.semibold))
-                    .foregroundStyle(Color(.systemRed))
-                Text(item.unit.displayName)
-                    .font(.title3)
-                    .foregroundStyle(.secondary)
-                    .padding(.bottom, 2)
+            VStack(alignment: .leading) {
+                Text(item.name)
+                    .font(.system(size: 32, weight: .bold))
+                    .foregroundStyle(.textGrayFont)
+                    .padding(.bottom, 10)
+                
+                HStack(alignment: .bottom, spacing: 6) {
+                    Text(formattedStockAmount)
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(.red)
+                }
+                Spacer()
             }
+            .padding(20)
             
             Spacer()
             
-            HStack {
+            VStack {
+                PrimaryButton(title: "구매처", style: .mini) {
+                    showSafari = true
+                }
+                .sheet(isPresented: $showSafari) {
+                    SafariView(url: URL(string: item.purchaseLink)!)
+                }
+                .padding(20)
                 Spacer()
-                // 구매처 링크는 모델에 없으므로 비활성화된 버튼으로 표시
-                Label("구매처", systemImage: "link")
-                    .font(.body.weight(.semibold))
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .background(.gray.opacity(0.5))
-                    .foregroundStyle(.white.opacity(0.8))
-                    .clipShape(Capsule())
             }
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity)
         .background(.light)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(.gray.opacity(0.2), lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .cornerRadius(10)
+        .frame(height: 127)
+    }
+    
+    // 재고량을 포맷팅하는 계산된 속성
+    private var formattedStockAmount: String {
+        let stock = item.currentStock
+        
+        switch item.unit {
+        case .gram:
+            if stock >= 1000 {
+                let packages = Int(stock / 500) // 500g 단위 포장
+                return "\(packages) 봉(\(Int(stock))g)"
+            } else {
+                return "\(Int(stock))g"
+            }
+        case .milliliter:
+            if stock >= 1000 {
+                let packs = Int(stock / 1000) // 1L 단위 포장
+                return "\(packs) 팩(\(Int(stock))ml)"
+            } else {
+                return "\(Int(stock)) ml"
+            }
+        case .piece:
+            return "\(Int(stock)) 개"
+        default:
+            return "\(Int(stock)) \(item.unit.displayName)"
+        }
     }
 }
+
+
+#Preview {
+    LowStockCard(item: Ingredient.mockData[0])
+}
+

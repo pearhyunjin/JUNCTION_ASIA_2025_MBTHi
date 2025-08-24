@@ -12,10 +12,18 @@ struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: [SortDescriptor(\Ingredient.name)]) private var ingredients: [Ingredient]
     @State private var showSalesScan = false
-
+    
     // MARK: Computed Properties
     private var lowStockIngredients: [Ingredient] {
         ingredients.filter { $0.isLowStock }
+    }
+    
+    private var beverageIngredients: [Ingredient] {
+        ingredients.filter { ["원두", "우유", "초코파우더"].contains($0.name) }
+    }
+    
+    private var dessertIngredients: [Ingredient] {
+        ingredients.filter { !["원두", "우유", "초코파우더"].contains($0.name) }
     }
     
     // MARK: Mock Data (기존과 동일)
@@ -32,24 +40,30 @@ struct HomeView: View {
     var body: some View {
         ZStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
+                VStack(alignment: .leading, spacing: 12) {
                     // 인사
                     greetingHeader
+                        .padding(.bottom, 12)
                     
                     // 소진 임박 재료 (스와이프 카드)
                     sectionTitle("소진 임박 재료")
                     lowStockCarousel
+                        .padding(.bottom, 16)
                     
                     // 일주일 매출 예측
                     sectionTitle("일주일 매출 예측")
                     WeeklyBarChart(preds: weeklyPred)
+                        .padding(.bottom, 12)
                     
                     // 현재 재고 현황 + 수정하기
-                    currentInventoryHeader
-                    inventoryList
+                    VStack(spacing: 0) {
+                        currentInventoryHeader
+                        inventoryList
+                    }
                 }
                 .padding(.vertical, 16)
             }
+            .scrollIndicators(.hidden)
             .fullScreenCover(isPresented: $showSalesScan) {
                 SalesScanView(
                     viewModel: SalesScanViewModel(
@@ -80,41 +94,78 @@ struct HomeView: View {
                 .font(.system(size: 24, weight: .bold))
                 .foregroundStyle(.darker)
         }
-        .padding(.horizontal, 16)
     }
     
     private func sectionTitle(_ title: String) -> some View {
         Text(title)
             .font(.title2).bold()
             .foregroundStyle(.textGrayFont)
-            .padding(.horizontal, 16)
+    }
+    
+    private var cardWidth: CGFloat {
+        let screenWidth = UIScreen.main.bounds.width
+        let padding: CGFloat = 16 * 2 // 양쪽 패딩
+        let spacing: CGFloat = 12 // 카드 간격
+        let nextCardPreview: CGFloat = 30 // 다음 카드 미리보기 영역
+        
+        return screenWidth - padding - spacing - nextCardPreview
     }
     
     private var lowStockCarousel: some View {
-        TabView {
+        Group {
             if lowStockIngredients.isEmpty {
-                VStack {
-                    Text("소진 임박 재료가 없습니다.")
-                        .font(.headline)
-                        .foregroundColor(.secondary)
-                        .padding()
-                }
-                .frame(height: 180)
-                .frame(maxWidth: .infinity)
-                .background(Color(.systemGray5))
-                .cornerRadius(16)
-                .padding(.horizontal, 16)
-
+                emptyStockView
+                    .frame(height: 127)
+                    .padding(.horizontal, 16)
             } else {
-                ForEach(lowStockIngredients) { item in
-                    LowStockCard(item: item)
-                        .padding(.horizontal, 16)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(lowStockIngredients) { item in
+                            LowStockCard(item: item)
+                                .frame(width: cardWidth)
+                        }
+                    }
                 }
+                .frame(height: 127)
             }
         }
-        .tabViewStyle(.page(indexDisplayMode: .automatic))
-        .frame(height: 180)
     }
+
+    private var emptyStockView: some View {
+        VStack {
+            Text("소진 임박 재료가 없습니다.")
+                .font(.headline)
+                .foregroundColor(.secondary)
+                .padding()
+        }
+        .background(Color(.systemGray5))
+        .cornerRadius(10)
+    }
+
+    
+    //    private var lowStockCarousel: some View {
+    //        TabView {
+    //            if lowStockIngredients.isEmpty {
+    //                VStack {
+    //                    Text("소진 임박 재료가 없습니다.")
+    //                        .font(.headline)
+    //                        .foregroundColor(.secondary)
+    //                        .padding()
+    //                }
+    //                .frame(height: 127)
+    //                .padding(.vertical, 20)
+    //                .background(Color(.systemGray5))
+    //                .cornerRadius(10)
+    //
+    //            } else {
+    //                ForEach(lowStockIngredients) { item in
+    //                    LowStockCard(item: item)
+    //                }
+    //            }
+    //        }
+    //        .tabViewStyle(.page(indexDisplayMode: .never))
+    //        .frame(height: 127)
+    //    }
     
     private var currentInventoryHeader: some View {
         HStack {
@@ -129,27 +180,84 @@ struct HomeView: View {
             .foregroundStyle(.normal)
             .padding(.trailing, 16)
         }
+        .frame(height: 49)
     }
     
     private var inventoryList: some View {
-        VStack(spacing: 16) {
-            VStack(alignment: .leading, spacing: 8) {
-                VStack(spacing: 0) {
-                    ForEach(ingredients) { ingredient in
-                        HStack {
-                            Text(ingredient.name)
-                            Spacer()
-                            Text("\(Int(ingredient.currentStock)) \(ingredient.unit.displayName)")
-                                .foregroundStyle(.secondary)
-                        }
-                        .padding(.vertical, 12)
+        VStack(spacing: 0) {
+            // 음료 재료 섹션
+            inventorySection(
+                title: "음료 재료",
+                ingredients: beverageIngredients
+            )
+            
+            // 디저트 재료 섹션
+            inventorySection(
+                title: "디저트 재료",
+                ingredients: dessertIngredients
+            )
+        }
+    }
+    
+    private func inventorySection(title: String, ingredients: [Ingredient]) -> some View {
+        VStack(spacing: 0) {
+            Rectangle()
+                .fill(.normal)
+                .frame(height: 1)
+                .padding(.top, 5)
+            
+            // 섹션 헤더
+            HStack {
+                Text(title)
+                    .font(.system(size: 16))
+                    .fontWeight(.medium)
+                    .foregroundColor(.textGrayFont)
+                Spacer()
+            }
+            .padding(.top, 16)
+            .padding(.bottom, 10)
+            
+            // 상단 구분선
+            Rectangle()
+                .fill(.light)
+                .frame(height: 1)
+            
+            // 재료 목록
+            VStack(spacing: 0) {
+                ForEach(ingredients) { ingredient in
+                    HStack {
+                        Text(ingredient.name)
+                            .font(.body)
+                            .foregroundColor(.textGrayFont)
+                        
+                        Spacer()
+                        
+                        Text(formatStock(ingredient))
+                            .font(.body)
+                            .foregroundColor(.textFont)
+                    }
+                    .padding(.vertical, 12)
+                    
+                    // 마지막 항목이 아니면 구분선 추가
+                    if ingredient.id != ingredients.last?.id {
                         Divider()
                     }
                 }
             }
-            .padding(.horizontal, 16)
+            
+            // 섹션 간 여백 (마지막 섹션이 아닌 경우)
+            if title != "디저트 재료" {
+                Rectangle()
+                    .fill(.clear)
+                    .frame(height: 20)
+            } else {
+                Rectangle()
+                    .fill(.clear)
+                    .frame(height: 16)
+            }
         }
     }
+    
     
     private var bottomActionButton: some View {
         PrimaryButton(
@@ -159,6 +267,101 @@ struct HomeView: View {
             showSalesScan = true
         }
     }
+    
+    private func formatStock(_ ingredient: Ingredient) -> String {
+        let stock = ingredient.currentStock
+        let name = ingredient.name
+        
+        switch ingredient.unit {
+        case .gram:
+            // 특정 재료별 맞춤 포맷팅
+            switch name {
+            case "원두":
+                if stock >= 1000 {
+                    let packages = Int(stock / 250) // 250g 기준
+                    return "\(packages)봉(\(Int(stock))g)"
+                } else {
+                    return "\(Int(stock))g"
+                }
+            case "초코파우더":
+                let packages = Int(stock / 160) // 160g 기준
+                return "\(packages)통(\(Int(stock))g)"
+            case "시트용과자":
+                let packages = Int(stock / 194) // 194g 기준 (이미지 참고)
+                return "\(packages)개(\(Int(stock))g)"
+            case "버터":
+                let packages = Int(stock / 454) // 454g 기준 (이미지 참고)
+                return "\(packages)개(\(Int(stock))g)"
+            case "설탕":
+                if stock >= 1000 {
+                    let packages = Int(stock / 2000) // 2kg 기준
+                    return "\(packages)봉(\(String(format: "%.1f", Double(stock)/1000))kg)"
+                } else {
+                    return "\(Int(stock))g"
+                }
+            case "사워크림":
+                let packages = Int(stock / 450) // 450g 기준
+                return "\(packages)통 \(Int(stock))g"
+            case "연유":
+                let packages = Int(stock / 500) // 500g 기준
+                return "\(packages)통(\(Int(stock))g)"
+            case "생크림":
+                let packages = Int(stock / 500) // 500g 기준
+                return "\(packages)통(\(Int(stock))g)"
+            case "화이트초콜릿":
+                let packages = Int(stock / 400) // 400g 기준
+                return "\(packages)개(\(Int(stock))g)"
+            case "박력분":
+                if stock >= 1000 {
+                    let packages = Int(stock / 2500) // 2.5kg 기준
+                    return "\(packages)개(\(String(format: "%.1f", Double(stock)/1000))kg)"
+                } else {
+                    return "\(Int(stock))g"
+                }
+            case "말차파우더":
+                let packages = Int(stock / 300) // 300g 기준
+                return "\(packages)개(\(Int(stock))g)"
+            default:
+                if stock >= 1000 {
+                    let packages = Int(stock / 500)
+                    return "\(packages)봉(\(Int(stock))g)"
+                } else {
+                    return "\(Int(stock))g"
+                }
+            }
+        case .milliliter:
+            if name == "우유" {
+                let packs = Int(stock / 900) // 900ml 기준
+                return "\(packs)팩(\(Int(stock))ml)"
+            } else {
+                if stock >= 1000 {
+                    let packs = Int(stock / 1000)
+                    return "\(packs)팩(\(Int(stock))ml)"
+                } else {
+                    return "\(Int(stock))ml"
+                }
+            }
+        case .piece:
+            switch name {
+            case "계란":
+                let packs = Int(stock / 30) // 30개 한 판
+                return "\(packs)판(\(Int(stock))개)"
+            case "라임":
+                return "\(Int(stock))봉지(\(String(format: "%.0f", stock))kg)"
+            case "화이트 초코":
+                let packs = Int(stock / 2) // 2개입
+                return "\(packs)통(\(Int(stock))개입)"
+            case "얼그레이 티백":
+                let packs = Int(stock / 25) // 25개입
+                return "\(packs)통(\(Int(stock))개입)"
+            default:
+                return "\(Int(stock))개"
+            }
+        default:
+            return "\(Int(stock))\(ingredient.unit.displayName)"
+        }
+    }
+    
 }
 
 // MARK: - Preview

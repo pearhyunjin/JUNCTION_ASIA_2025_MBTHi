@@ -35,7 +35,7 @@ enum IngredientUnit: String, CaseIterable, Codable {
         case .teaspoon: return "작은술"
         case .cup: return "컵"
         case .slice: return "조각"
-        case .bag: return "봉지"
+        case .bag: return "봉"
         case .bottle: return "병"
         case .pack: return "팩"
         }
