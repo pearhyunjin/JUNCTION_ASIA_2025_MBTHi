@@ -1,4 +1,11 @@
+//
+//  StockStatus.swift
+//  MBTHi
+//
+//  Created by taeni on 8/24/25.
+//
 
+import SwiftUI
 
 // MARK: - 재고 상태 열거형
 enum StockStatus {
