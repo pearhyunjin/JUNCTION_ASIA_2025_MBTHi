@@ -11,7 +11,8 @@ import SwiftData
 struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: [SortDescriptor(\Ingredient.name)]) private var ingredients: [Ingredient]
-    
+    @State private var showSalesScan = false
+
     // MARK: Computed Properties
     private var lowStockIngredients: [Ingredient] {
         ingredients.filter { $0.isLowStock }
@@ -29,27 +30,43 @@ struct HomeView: View {
     ]
     
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                // 인사 (기존 스타일)
-                greetingHeader
-                
-                // 소진 임박 재료 (스와이프 카드)
-                sectionTitle("소진 임박 재료")
-                lowStockCarousel
-                
-                // 일주일 매출 예측 (기존 스타일)
-                sectionTitle("일주일 매출 예측")
-                WeeklyBarChart(preds: weeklyPred)
-                
-                // 현재 재고 현황 + 수정하기 (기존 스타일)
-                currentInventoryHeader
-                inventoryList
-                bottomActionButton
+        ZStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    // 인사
+                    greetingHeader
+                    
+                    // 소진 임박 재료 (스와이프 카드)
+                    sectionTitle("소진 임박 재료")
+                    lowStockCarousel
+                    
+                    // 일주일 매출 예측
+                    sectionTitle("일주일 매출 예측")
+                    WeeklyBarChart(preds: weeklyPred)
+                    
+                    // 현재 재고 현황 + 수정하기
+                    currentInventoryHeader
+                    inventoryList
+                }
+                .padding(.vertical, 16)
             }
-            .padding(.vertical, 16)
+            .fullScreenCover(isPresented: $showSalesScan) {
+                SalesScanView(
+                    viewModel: SalesScanViewModel(
+                        ocrService: UpstageOCRService(),
+                        chatService: UpstageChatService()
+                    )
+                )
+            }
+            
+            VStack {
+                Spacer()
+                
+                bottomActionButton
+                    .padding(.vertical, 16)
+            }
         }
-        .background(Color(.systemGroupedBackground))
+        .padding(.horizontal, 16)
     }
     
     // MARK: Subviews (기존 스타일 그대로)
@@ -135,20 +152,12 @@ struct HomeView: View {
     }
     
     private var bottomActionButton: some View {
-        Button {
-            // 이후: OCR/LLM 파이프라인 연결
-        } label: {
-            Text("재고 파악하기")
-                .font(.title3.weight(.semibold))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
+        PrimaryButton(
+            title: "재고 파악하기",
+            style: .basic)
+        {
+            showSalesScan = true
         }
-        .buttonStyle(.plain)
-        .background(Color("Normal", bundle: .main))
-        .foregroundStyle(Color("Light", bundle: .main))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .padding(.horizontal, 16)
-        .padding(.top, 8)
     }
 }
 
